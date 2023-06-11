@@ -24,16 +24,18 @@ module.exports.getUsers = (req, res) => {
         .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' }));
 };
 
-module.exports.getUserById = (req, res, next) => {
+module.exports.getUserById = (req, res) => {
     User.findById(req.params.userId)
-        .then((user) => {
-            if (!user) {
-                res.status(NOT_FOUND_ERROR).send({ message: 'Пользователь по указанному _id не найден' })
+        .then((user) => res.send({data: user}))
+        .catch((err) => {
+            if (err instanceof CastError) {
+                res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные' });
+            } else if (err instanceof ValidationError) {
+                res.status(NOT_FOUND_ERROR).send({ message: 'Пользователь с указанным _id не найден' })
             } else {
-                next(res.status(200).send({ data: user }));
+                res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
             };
-        })
-        .catch((err) => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' }));
+        });
 };
 
 module.exports.updateUser = (req, res) => {
@@ -45,8 +47,8 @@ module.exports.updateUser = (req, res) => {
     },
         {
             new: true,
+            runValidators: true
         })
-       // .orFail(new Error(NOT_FOUND_ERROR))
         .then((updatedUser) => res.send({ data: updatedUser }))
         .catch((err) => {
             if (err instanceof ValidationError) {
@@ -68,6 +70,7 @@ module.exports.changeAvatar = ( req, res ) => {
     },
         {
             new: true,
+            runValidators: true
         })
         .orFail(new Error(NOT_FOUND_ERROR))
         .then((avatar) => res.send({ data: avatar }))
