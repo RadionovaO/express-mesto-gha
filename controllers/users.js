@@ -26,11 +26,12 @@ module.exports.getUsers = (req, res) => {
 
 module.exports.getUserById = (req, res) => {
     User.findById(req.params.userId)
+        .orFail(new Error('NotFound'))
         .then((user) => res.send({data: user}))
         .catch((err) => {
             if (err instanceof CastError) {
                 res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные' });
-            } else if (err instanceof ValidationError) {
+            } else if  (err.message === 'NotFound') {
                 res.status(NOT_FOUND_ERROR).send({ message: 'Пользователь с указанным _id не найден' })
             } else {
                 res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
