@@ -52,12 +52,10 @@ module.exports.updateUser = (req, res) => {
         })
         .then((updatedUser) => res.send({ data: updatedUser }))
         .catch((err) => {
-            if (err instanceof ValidationError) {
-                res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при обновлении профиля' });
-            } else if (err instanceof CastError) {
-                res.status(NOT_FOUND_ERROR).send({ message: 'Пользователь с указанным _id не найден' })
-            } else {
-                res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
+            if (err.name === 'ValidationError') {
+                return res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при обновлении аватара' });
+            } else { 
+                return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
             };
         });
 };
@@ -73,15 +71,12 @@ module.exports.changeAvatar = ( req, res ) => {
             new: true,
             runValidators: true
         })
-        .orFail(new Error(NOT_FOUND_ERROR))
         .then((avatar) => res.send({ data: avatar }))
         .catch((err) => {
-            if (err instanceof ValidationError) {
-                res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при обновлении аватара' });
-            } else if (err instanceof CastError) {
-                res.status(NOT_FOUND_ERROR).send({ message: 'Пользователь с указанным _id не найден' })
+            if (err.name === 'ValidationError') {
+                return res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при обновлении аватара' });
             } else { 
-                res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
+                return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
             };
         });
 };
