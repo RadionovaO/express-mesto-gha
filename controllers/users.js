@@ -53,7 +53,8 @@ module.exports.updateUser = (req, res) => {
         .then((updatedUser) => res.send({ data: updatedUser }))
         .catch((err) => {
             if (err.name === 'ValidationError') {
-                return res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при обновлении аватара' });
+                return res.status(BAD_REQUEST_ERROR).send({
+                    message: 'Переданы некорректные данные при обновлении профиля' });
             } else { 
                 return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
             };
