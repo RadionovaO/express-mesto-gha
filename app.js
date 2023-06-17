@@ -1,27 +1,34 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 const routes = require('./routes');
-// const routerUsers = require('./routes/users');
-// const routerCards = require('./routes/cards');
+const { auth } = require('./middlewares/auth');
+const {
+  createUser,
+  login,
+} = require('./controllers/users');
 
 const { PORT = 3000 } = process.env;
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb');
 
-app.use((req, res, next) => {
+/* app.use((req, res, next) => {
   req.user = {
     _id: '6480f4b7029d8ddcea12ca21',
   };
 
   next();
-});
+}); */
 
+app.post('/signin', login);
+app.post('/signup', createUser);
+
+app.use(auth);
 app.use(routes);
-// app.use(routerUsers);
-// app.use(routerCards);
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console

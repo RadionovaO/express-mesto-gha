@@ -1,4 +1,7 @@
-const { CastError, ValidationError } = require('mongoose').Error;
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const { CastError } = require('mongoose').Error;
 const User = require('../models/user');
 const {
   BAD_REQUEST_ERROR,
@@ -7,12 +10,17 @@ const {
 } = require('../errors/errors');
 
 module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
 
-  User.create({ name, about, avatar })
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    }))
     .then((user) => res.status(201).send({ data: user }))
     .catch((err) => {
-      if (err instanceof ValidationError) {
+      if (err.name === 'ValidationError') {
         res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при создании пользователя' });
       } else {
         res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
@@ -85,4 +93,20 @@ module.exports.changeAvatar = (req, res) => {
       }
       return res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
     });
+};
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key');
+      res.cookie('jwt', token, {
+        maxAge: 3600000,
+        httpOnly: true,
+        sameSite: true,
+      });
+      res.send({ token });
+    })
+    .catch(next);
 };
