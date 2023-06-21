@@ -5,7 +5,8 @@ const authError = (res) => {
 };
 
 module.exports.auth = (req, res, next) => {
-  const token = req.cookies;
+  const token = req.cookies.jwt;
+  console.log(req.cookies)
   let payload;
 
   try {

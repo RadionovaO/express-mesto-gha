@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
+const { errors } = require('celebrate');
 const routes = require('./routes');
 const { auth } = require('./middlewares/auth');
 const {
@@ -28,7 +29,10 @@ app.post('/signin', login);
 app.post('/signup', createUser);
 
 app.use(auth);
+
 app.use(routes);
+
+app.use(errors());
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
