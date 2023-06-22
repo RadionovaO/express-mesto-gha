@@ -8,8 +8,7 @@ const {
   likeCard,
   dislikeCard,
 } = require('../controllers/cards');
-
-const regex = /^https?:\/\/(?:www\.)?([a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=]+)/;
+const regex = require('../middlewares/regex');
 
 router.get('/cards', getCards);
 
