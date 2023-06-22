@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const { errors } = require('celebrate');
 const routes = require('./routes');
 const { auth } = require('./middlewares/auth');
+const { errorsHandler } = require('./middlewares/errorsHandler');
 const {
   createUser,
   login,
@@ -33,6 +34,7 @@ app.use(auth);
 app.use(routes);
 
 app.use(errors());
+app.use(errorsHandler);
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console

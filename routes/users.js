@@ -1,35 +1,38 @@
 const router = require('express').Router();
 const cookieParser = require('cookie-parser');
-const { celebrate, Joi } = require('celebrate');
+const { celebrate, Joi, Segments } = require('celebrate');
 
 const {
   getUsers,
+  getCurrentUser,
   getUserById,
   updateUser,
   changeAvatar,
 } = require('../controllers/users');
 
-const regex = /^http:\/\/(?:www\.)?[A-z0-9-]+\.[^\s]+/;
+const regex = /^https?:\/\/(?:www\.)?([a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=]+)/;
 
 router.use(cookieParser());
 
 router.get('/users', getUsers);
 
+router.get('/users/me', getCurrentUser);
+
 router.get('/users/:userId', celebrate({
-  params: Joi.object().keys({
-    userId: Joi.string().hex().required(),
+  [Segments.PARAMS]: Joi.object().keys({
+    userId: Joi.string().hex().length(24).required(),
   }),
 }), getUserById);
 
 router.patch('/users/me', celebrate({
-  body: Joi.object().keys({
+  [Segments.BODY]: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
   }),
 }), updateUser);
 
 router.patch('/users/me/avatar', celebrate({
-  body: Joi.object().keys({
+  [Segments.BODY]: Joi.object().keys({
     avatar: Joi.string().pattern(regex),
   }),
 }), changeAvatar);

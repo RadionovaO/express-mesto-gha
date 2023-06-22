@@ -1,12 +1,10 @@
-const { CastError, ValidationError } = require('mongoose').Error;
+const { ValidationError } = require('mongoose').Error;
 const Card = require('../models/card');
-const {
-  BAD_REQUEST_ERROR,
-  NOT_FOUND_ERROR,
-  INTERNAL_SERVER_ERROR,
-} = require('../errors/errors');
+const NotFoundError = require('../errors/notFound');
+const BadRequestError = require('../errors/badRequest');
+const ForbiddenError = require('../errors/forbidden');
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
 
@@ -14,35 +12,35 @@ module.exports.createCard = (req, res) => {
     .then((card) => res.status(201).send({ data: card }))
     .catch((err) => {
       if (err instanceof ValidationError) {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Преданы некорректные данные' });
+        next(new BadRequestError('Преданы некорректные данные'));
       } else {
-        res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
+        next(err);
       }
     });
 };
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send({ data: cards }))
-    .catch(() => res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' }));
+    .catch((err) => next(err));
 };
 
-module.exports.deleteCardById = (req, res) => {
+module.exports.deleteCardById = (req, res, next) => {
+  const { _id } = req.user;
   Card.findByIdAndRemove(req.params.cardId)
-    .orFail(new Error('NotFound'))
-    .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err instanceof CastError) {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные' });
-      } else if (err.message === 'NotFound') {
-        res.status(NOT_FOUND_ERROR).send({ message: 'Передан несуществующий _id карточки' });
-      } else {
-        res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
+    .orFail(new NotFoundError('Передан несуществующий ID карточки'))
+    .then((card) => {
+      if (card.owner.toString() !== _id) {
+        return Promise.reject(new ForbiddenError('Пост пренадлежит другому пользователю'));
       }
-    });
+
+      return Card.deleteOne(card)
+        .then(() => res.send({ message: 'Пост удалён' }));
+    })
+    .catch((err) => next(err));
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   const owner = req.user._id;
 
   Card.findByIdAndUpdate(req.params.cardId, {
@@ -50,20 +48,12 @@ module.exports.likeCard = (req, res) => {
   }, {
     new: true,
   })
-    .orFail(new Error('NotFound'))
+    .orFail(new NotFoundError('Передан несуществующий id карточки'))
     .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err instanceof CastError) {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные для постановки лайка' });
-      } else if (err.message === 'NotFound') {
-        res.status(NOT_FOUND_ERROR).send({ message: 'Передан несуществующий _id карточки' });
-      } else {
-        res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
-      }
-    });
+    .catch((err) => next(err));
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   const owner = req.user._id;
 
   Card.findByIdAndUpdate(req.params.cardId, {
@@ -71,15 +61,7 @@ module.exports.dislikeCard = (req, res) => {
   }, {
     new: true,
   })
-    .orFail(new Error('NotFound'))
+    .orFail(new NotFoundError('Передан несуществующий id карточки'))
     .then((card) => res.send({ data: card }))
-    .catch((err) => {
-      if (err instanceof CastError) {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы  некорректные данные для снятия лайка' });
-      } else if (err.message === 'NotFound') {
-        res.status(NOT_FOUND_ERROR).send({ message: 'Передан несуществующий _id карточки' });
-      } else {
-        res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
-      }
-    });
+    .catch((err) => next(err));
 };
